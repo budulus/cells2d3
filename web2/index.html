@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bezier Spline Tool</title>
+    <link rel="stylesheet" href="style.css">
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Bezier Spline Tool</h1>
+        <div class="controls">
+            <div>
+                <label for="pixel_um">pixel/um:</label>
+                <input type="number" id="pixel_um" value="1">
+            </div>
+            <div>
+                <label for="depth_um">depth [um]:</label>
+                <input type="number" id="depth_um" value="10">
+             </div>
+            <div class="file-upload">
+                <input type="file" id="image_upload" accept="image/*">
+            </div>
+            <div class = "button-group">
+               <button id="create_roi">Create ROI</button>
+                <button id="reset_roi">Reset ROI</button>
+                <button id="reset_view">Reset View</button>
+            </div>
+
+        </div>
+
+        <canvas id="mainCanvas"></canvas>
+         <div class="zoom-buttons">
+            <button id="zoom_in">+</button>
+            <button id="zoom_out">-</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
