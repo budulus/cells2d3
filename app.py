@@ -37,7 +37,7 @@ class BezierSplineTool(QMainWindow):
         self.roi_lines = []
 
     def load_image(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Images (*.png *.jpg *.bmp)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Images (*.png *.jpg *.bmp *.tif)")
         if file_name:
             self.pixmap = QPixmap(file_name)
             self.base_pixmap = self.pixmap.copy()
@@ -132,7 +132,6 @@ class BezierSplineTool(QMainWindow):
     def create_roi(self):
         if len(self.points) < 2:
             return
-
         try:
             pixel_um = float(self.pixel_um_input.text())
             depth_um = float(self.depth_input.text())
@@ -154,21 +153,24 @@ class BezierSplineTool(QMainWindow):
         normal_y = 1
         norm = np.sqrt(normal_x**2 + normal_y**2)
         unit_normal = QPointF(normal_x / norm, normal_y / norm)
-        
-        # Shift First and Last Points
-        first_point = self.points[0]
-        last_point = self.points[-1]
-        
-        shifted_first_point = first_point + (unit_normal * depth_pixels)
-        shifted_last_point = last_point + (unit_normal * depth_pixels)
-        
-        # Create the line segments for the ROI
-        self.roi_lines = [
-            (first_point, shifted_first_point),
-            (shifted_first_point, shifted_last_point),
-            (shifted_last_point, last_point)
-        ]
-        self.update_display()
+
+        # linear style for the bottom
+        if self.radio_linear.isChecked():
+
+            # Shift First and Last Points
+            first_point = self.points[0]
+            last_point = self.points[-1]
+            
+            shifted_first_point = first_point + (unit_normal * depth_pixels)
+            shifted_last_point = last_point + (unit_normal * depth_pixels)
+            
+            # Create the line segments for the ROI
+            self.roi_lines = [
+                (first_point, shifted_first_point),
+                (shifted_first_point, shifted_last_point),
+                (shifted_last_point, last_point)
+            ]
+            self.update_display()
 
     def reset_roi(self):
         self.roi_lines = []

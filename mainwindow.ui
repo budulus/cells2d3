@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>989</width>
-    <height>686</height>
+    <width>975</width>
+    <height>698</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,14 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,5">
+      <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,1">
+       <item row="0" column="1" rowspan="2">
+        <widget class="QGraphicsView" name="graphicsView">
+         <property name="renderHints">
+          <set>QPainter::Antialiasing</set>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBox">
          <property name="title">
@@ -62,27 +69,7 @@
             </item>
            </layout>
           </item>
-          <item>
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
          </layout>
-        </widget>
-       </item>
-       <item row="0" column="1" rowspan="2">
-        <widget class="QGraphicsView" name="graphicsView">
-         <property name="renderHints">
-          <set>QPainter::Antialiasing</set>
-         </property>
         </widget>
        </item>
        <item row="1" column="0">
@@ -90,60 +77,102 @@
          <property name="title">
           <string>ROI Definition</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0">
-           <layout class="QHBoxLayout" name="inputLayout">
-            <item>
-             <widget class="QLabel" name="pixel_um_label">
-              <property name="text">
-               <string>pixel/um:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="pixel_um_input">
-              <property name="text">
-               <string>1</string>
-              </property>
-             </widget>
-            </item>
-            <item>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="5" column="2">
+           <widget class="QPushButton" name="save_area">
+            <property name="text">
+             <string>Save Area...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0" colspan="2">
+           <widget class="QPushButton" name="create_roi_button">
+            <property name="text">
+             <string>Create ROI</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" colspan="2">
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="0">
              <widget class="QLabel" name="depth_label">
               <property name="text">
                <string>depth [um]:</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="pixel_um_label">
+              <property name="text">
+               <string>pixel/um:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
              <widget class="QLineEdit" name="depth_input">
               <property name="text">
-               <string>10</string>
+               <string>100</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="pixel_um_input">
+              <property name="text">
+               <string>1</string>
               </property>
              </widget>
             </item>
            </layout>
           </item>
-          <item row="1" column="0">
+          <item row="4" column="0" colspan="3">
            <widget class="QPushButton" name="reset_roi_button">
             <property name="text">
              <string>Reset ROI</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="3" column="1" colspan="2">
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label">
+              <property name="font">
+               <font>
+                <family>Arial</family>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Bottom-Shape:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QRadioButton" name="radio_linear">
+              <property name="text">
+               <string>Linear</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QRadioButton" name="radio_curved">
+              <property name="text">
+               <string>Curved</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="0" column="1">
            <widget class="QCheckBox" name="edit_boundary_checkbox">
             <property name="text">
              <string>Edit Boundary</string>
             </property>
             <property name="checked">
              <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QPushButton" name="create_roi_button">
-            <property name="text">
-             <string>Create ROI</string>
             </property>
            </widget>
           </item>
