@@ -1,0 +1,6 @@
+Channel	Label	Color	ThresholdMin	ThresholdMax	Gamma	ColorMin(%)	ColorMax(%)	Red(%)	Green(%)	Blue(%)
+In(113)	113In_Histone H3	Blue	0,00	62,25	1,00	5	100	0	0	100
+In(115)	115In_SMA	White	0,00	259,53	1,00	5	100	100	100	100
+La(139)	139La_E-Cadherin / P-Cadherin	Red	0,00	13,47	1,00	5	100	100	0	0
+Er(166)	166Er_CD8a	Magenta	0,00	3,93	1,00	5	100	100	0	100
+Er(167)	167Er_Fibronectin	Lime	0,00	33,67	1,00	5	100	0	100	0

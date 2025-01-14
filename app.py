@@ -2,12 +2,48 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QGraphicsScene, QGraphicsPixmapItem
 )
-from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor, QTransform, QCursor
+from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor, QTransform, QCursor, QImage
 from PyQt5.QtCore import Qt, QPointF, QRectF
 from PyQt5 import uic
 import numpy as np
 from scipy.interpolate import splprep, splev
 from sklearn.linear_model import LinearRegression
+from readimc import MCDFile
+
+
+def to_8bit(array):
+    """
+    Convert an m x n ndarray into an 8-bit (0-255) array.
+    
+    Parameters:
+        array (ndarray): Input NumPy array of shape (m, n).
+    
+    Returns:
+        ndarray: 8-bit representation of the input array.
+    """
+    if not isinstance(array, np.ndarray):
+        raise ValueError("Input must be a NumPy ndarray.")
+    
+    # Ensure the array has at least two dimensions
+    if array.ndim != 2:
+        raise ValueError("Input array must be two-dimensional (m x n).")
+    
+    # Normalize the array values to range 0-1
+    normalized = (array - np.min(array)) / (np.max(array) - np.min(array))
+    
+    # Scale to 0-255 and convert to uint8
+    array_8bit = (normalized * 255).astype(np.uint8)
+    
+    return array_8bit
+
+# auxiliary functions
+def ndarray_to_qpixmap(array):
+    # Ensure the array is in 8-bit format (dtype=uint8)
+    height, width = array.shape
+    bytes_per_line = width
+    qimage = QImage(array.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
+    return QPixmap.fromImage(qimage)
+
 
 class BezierSplineTool(QMainWindow):
     def __init__(self):
@@ -26,20 +62,58 @@ class BezierSplineTool(QMainWindow):
         self.reset_view_button.clicked.connect(self.reset_view)
         self.zoom_in_button.clicked.connect(self.zoom_in)
         self.zoom_out_button.clicked.connect(self.zoom_out)
+        self.button_display_channel.clicked.connect(self.display_channel)
+        self.button_delete_boundary.clicked.connect(self.delete_boundary)
+        self.slider_gamma.valueChanged.connect(self.update_gamma)
 
-        # Initialize variables
+        # Initialize general variables
         self.pixmap_item = None
-        self.points = []
         self.drawing_enabled = False
         self.base_pixmap = None
         self.zoom_scale = 1.0
         self.scene_rect = QRectF()
+
+        # ROI vars
+        self.points = []
         self.roi_lines = []
+        self.shifted_points = []
 
     def load_image(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Images (*.png *.jpg *.bmp *.tif)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open MCD File", "", "Images (*.mcd)")
+
+        with MCDFile(file_name) as f:
+            # first slide
+            slide = f.slides[0]
+            self.width_um = slide.width_um
+            self.height_um = slide.height_um
+            print(
+                slide.id,
+                slide.description,
+                slide.width_um,
+                slide.height_um,
+            )
+            # first acquisition of first slide
+            acquisition = slide.acquisitions[0]
+            self.img = f.read_acquisition(acquisition)
+            self.n_channels, self.height_px, self.width_px = self.img.shape
+            # self.px_per_um = self.width_px/self.width_um
+            # self.pixel_um_input.setText(str(self.px_per_um))
+
+            print(
+                acquisition.id,
+                acquisition.description,
+                acquisition.width_um,
+                acquisition.height_um,
+                acquisition.channel_names,  # metals
+                acquisition.channel_labels,  # targets
+            )
+
+        # populate list QtWidgets
+        for channel in acquisition.channel_labels:
+            self.list_channels.addItem(channel)
+
         if file_name:
-            self.pixmap = QPixmap(file_name)
+            self.pixmap = ndarray_to_qpixmap(to_8bit(self.img[0, :, :]))
             self.base_pixmap = self.pixmap.copy()
 
             if self.pixmap_item:
@@ -117,6 +191,19 @@ class BezierSplineTool(QMainWindow):
             except Exception as e:
                 print(f"Error creating spline: {e}")
 
+        # Draw shifted spline
+        if len(self.shifted_points) >= 2:
+            try:
+                spline_points = self.create_bezier_spline(self.shifted_points)
+                pen = QPen(QColor("green"), 2)
+                painter.setPen(pen)
+                path = [spline_points[0]]
+                for point in spline_points[1:]:
+                    painter.drawLine(path[-1], point)
+                    path.append(point)
+            except Exception as e:
+                print(f"Error creating spline: {e}")
+
         # Draw ROI lines if they exist
         if self.roi_lines:
             pen = QPen(QColor("green"), 2)
@@ -130,6 +217,7 @@ class BezierSplineTool(QMainWindow):
         self.scene.addItem(self.pixmap_item)
 
     def create_roi(self):
+
         if len(self.points) < 2:
             return
         try:
@@ -157,6 +245,9 @@ class BezierSplineTool(QMainWindow):
         # linear style for the bottom
         if self.radio_linear.isChecked():
 
+            self.roi_lines = []
+            self.shifted_points = []
+
             # Shift First and Last Points
             first_point = self.points[0]
             last_point = self.points[-1]
@@ -170,7 +261,17 @@ class BezierSplineTool(QMainWindow):
                 (shifted_first_point, shifted_last_point),
                 (shifted_last_point, last_point)
             ]
-            self.update_display()
+
+        else:
+            self.roi_lines = []
+            self.shifted_points = []
+            self.shifted_points = np.copy(self.points)
+            for i, point in enumerate(self.points):
+                self.shifted_points[i] = point + unit_normal * depth_pixels
+
+            self.roi_lines = [(self.points[0], self.shifted_points[0]),
+                              (self.points[-1], self.shifted_points[-1])]
+        self.update_display()
 
     def reset_roi(self):
         self.roi_lines = []
@@ -182,6 +283,15 @@ class BezierSplineTool(QMainWindow):
             self.graphicsView.fitInView(self.pixmap_item.boundingRect(), Qt.KeepAspectRatio)
             self.zoom_scale = 1.0
             self.graphicsView.setTransform(QTransform().scale(self.zoom_scale, self.zoom_scale))
+
+    def clear_area(self):
+        self.roi_lines = []
+        self.points = []
+        self.shifted_points = []
+
+    def delete_boundary(self):
+        self.clear_area()
+        self.update_display()
 
     def zoom_in(self):
         self.zoom_scale *= 1.125
@@ -206,6 +316,43 @@ class BezierSplineTool(QMainWindow):
         except Exception as e:
             print(f"Spline creation error: {e}")
             return [QPointF(px, py) for px, py in zip(x, y)]
+
+    def update_gamma(self, value):
+        """Update the gamma of the pixmap based on the slider value."""
+        gamma = value / 100.0  # Assuming slider value is scaled for gamma adjustment
+        self.base_pixmap = self.adjust_gamma(self.pixmap, gamma)
+        self.redraw_graphics()
+
+    def adjust_gamma(self, pixmap, gamma):
+        """Adjust the gamma of the given QPixmap."""
+        image = pixmap.toImage()
+        width, height = image.width(), image.height()
+
+        # Convert QImage to NumPy array
+        buffer = image.bits().asstring(image.byteCount())
+        arr = np.frombuffer(buffer, dtype=np.uint8).reshape((height, width, 4))  # RGBA
+
+        # Apply gamma correction
+        gamma_corrected = np.clip(255 * (arr / 255) ** gamma, 0, 255).astype(np.uint8)
+
+        # Convert back to QImage
+        corrected_image = QImage(gamma_corrected.data, width, height, image.bytesPerLine(), QImage.Format_RGBA8888)
+        return QPixmap.fromImage(corrected_image)
+
+    def redraw_graphics(self):
+        """Redraw the graphics view with the updated pixmap."""
+        self.pixmap_item.setPixmap(self.base_pixmap)
+        self.scene.update()
+
+    def display_channel(self):
+        selected_items = self.list_channels.selectedItems()
+        indices = [self.list_channels.row(item) for item in selected_items]
+        if indices != []:
+            ix = indices[0]
+            self.pixmap = ndarray_to_qpixmap(to_8bit(self.img[ix, :, :]))
+            self.base_pixmap = self.pixmap.copy()
+            self.redraw_graphics()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
